@@ -49,6 +49,12 @@ const Register = () => {
             return password === passwordConfirmation;
         }
     }
+
+    const displayErrors = () => {
+        return errors.map((error, i) => (
+            <p key={i}>{error.message}</p>
+        ));
+    }
     
     return (
         <Grid textAlign="center" verticalAlign="middle">
@@ -116,6 +122,9 @@ const Register = () => {
                         </Button>
                     </Segment>        
                 </Form>
+                {errors.length > 0 && (
+                    <Message>{displayErrors()}</Message>
+                )}
                 <Message>
                     Already a user? <Link to="/login">Log in</Link>
                 </Message>
