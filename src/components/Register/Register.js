@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Grid, Form, Segment, Message, Button, Header, Icon } from 'semantic-ui-react';
 import { Link } from 'react-router-dom';
 import firebase from '../../firebase';
+import md5 from 'md5';
 
 const Register = () => {
 
@@ -11,27 +12,55 @@ const Register = () => {
     const [password, setPassword] = useState('');
     const [passwordConfirmation, setPasswordConfirmation] = useState('');
     const [errors, setErrors] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [usersRef, setUsersRef] = useState(firebase.database().ref('users'));
 
     const handleSubmit = e => {
         if (isFormValid()){
             e.preventDefault();
+            setErrors([]);
+            console.log(errors);
+            setLoading(true);
             firebase
             .auth()
             .createUserWithEmailAndPassword(email, password)
-            .then(createdUser => console.log(createdUser))
-            .catch(e => console.error(e.message));
-        } else {
-            console.log(errors);
+            .then(createdUser => {
+                console.log(createdUser);
+                createdUser.user.updateProfile({
+                    displayName: username,
+                    photoURL: `https://www.gravatar.com/avatar/${md5(createdUser.user.email)}?d=identicon`
+                })
+                .then(() => {
+                    saveUser(createdUser).then(() => console.log('user saved'));
+                    setLoading(false);
+                })
+                .catch(e => {
+                    console.error(e.message);
+                    setErrors(e, ...errors);
+                    setLoading(false);
+                })
+            })
+            .catch(e => {
+                console.error(e.message);
+                setLoading(false);
+                setErrors([e]);
+            });
         }
     };
 
+    const saveUser = (createdUser) => {
+        return usersRef.child(createdUser.user.uid).set({
+            name: createdUser.user.displayName,
+            avatar: createdUser.user.photoURL,
+        });
+    }
+
     const isFormValid = () => {
         if (isFormEmpty()){
-            setErrors([{message: 'Fill all fields'}, ...errors]);
-            console.log(errors);
+            setErrors([{message: 'Fill all fields'}]);
             return false;
         } else if (!isPasswordValid()){
-            setErrors([{message: 'Password is not valid'}, ...errors]);
+            setErrors([{message: 'Password is not valid'}]);
             return false
         } else {
             return true;
@@ -55,12 +84,12 @@ const Register = () => {
             <p key={i}>{error.message}</p>
         ));
     }
-    
+       
     return (
         <Grid textAlign="center" verticalAlign="middle">
             <Grid.Column style ={{ maxWidth: 450 }}>
                 <Header 
-                    as="h2" 
+                    as="h1" 
                     icon 
                     color="orange" 
                     textAlign="center"
@@ -117,13 +146,18 @@ const Register = () => {
                             color="orange" 
                             fluid 
                             size="large"
+                            loading={loading}
+                            disabled={loading}
                         >
                             Submit
                         </Button>
                     </Segment>        
                 </Form>
                 {errors.length > 0 && (
-                    <Message>{displayErrors()}</Message>
+                    <Message>
+                        <h3>Error</h3>
+                        {displayErrors()}
+                    </Message>
                 )}
                 <Message>
                     Already a user? <Link to="/login">Log in</Link>
