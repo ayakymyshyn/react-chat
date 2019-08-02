@@ -19,6 +19,7 @@
     "redux-devtools-extension": "^2.13.5",
     "semantic-ui-css": "^2.3.3",
     "semantic-ui-react": "^0.82.1",
+    "use-state-with-callback": "^1.0.18",
     "uuid": "^3.3.2"
   },
   "scripts": {

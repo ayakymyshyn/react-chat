@@ -26,12 +26,14 @@ const UserPanel = (props) => {
         firebase
         .auth()
         .signOut()
-        .then(() => console.log('signed out!'));
+        .then(() => console.log('signed out!'))
     }
 
     useEffect(() => {
         setUser(props.currentUser);
-    }, [])
+    }, []);
+
+
     return (
        <Grid style={{ background: '#4c3c4c' }}>
            <Grid.Column>

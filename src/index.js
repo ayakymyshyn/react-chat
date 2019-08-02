@@ -16,6 +16,7 @@ import rootReducer from './reducer';
 import { setUser, clearUser } from './actions'
 
 const store = createStore(rootReducer, composeWithDevTools());
+//let controller = new window.AbortController(); 
 
 const Root = (props) => {
     useEffect(() => {

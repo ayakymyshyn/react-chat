@@ -1,170 +1,209 @@
-import React, { useState } from 'react';
-
+import React, { useState, useEffect, Component } from 'react';
 import { Grid, Form, Segment, Message, Button, Header, Icon } from 'semantic-ui-react';
 import { Link } from 'react-router-dom';
 import firebase from '../../firebase';
 import md5 from 'md5';
 
-const Register = () => {
+class Register extends Component {
 
-    const [username, setUsername] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [passwordConfirmation, setPasswordConfirmation] = useState('');
-    const [errors, setErrors] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [usersRef, setUsersRef] = useState(firebase.database().ref('users'));
+    constructor(props){
+        super(props);
+    };
 
-    const handleSubmit = e => {
-        if (isFormValid()){
+    state = {
+        username: '',
+        email: '',
+        password: '',
+        passwordConfirmation: '',
+        errors: [],
+        loading: false,
+        usersRef: firebase.database().ref('users'),
+    };
+
+    handleSubmit = e => {
+        if (this.isFormValid()){
             e.preventDefault();
-            setErrors([]);
-            console.log(errors);
-            setLoading(true);
+            this.setState({
+                errors: [],
+                loading: true,
+            });
             firebase
             .auth()
-            .createUserWithEmailAndPassword(email, password)
+            .createUserWithEmailAndPassword(this.state.email, this.state.password)
             .then(createdUser => {
                 console.log(createdUser);
                 createdUser.user.updateProfile({
-                    displayName: username,
+                    displayName: this.state.username,
                     photoURL: `https://www.gravatar.com/avatar/${md5(createdUser.user.email)}?d=identicon`
                 })
                 .then(() => {
-                    saveUser(createdUser).then(() => console.log('user saved'));
-                    setLoading(false);
+                    this.saveUser(createdUser).then(() => console.log('user saved'));
+                    this.setState({
+                        loading: false
+                    })
                 })
                 .catch(e => {
                     console.error(e.message);
-                    setErrors(e, ...errors);
-                    setLoading(false);
-                })
+                    this.setState({
+                        errors: this.state.errors.concat(e),
+                        loading: false,
+                    });
+                });
             })
             .catch(e => {
                 console.error(e.message);
-                setLoading(false);
-                setErrors([e]);
+                this.setState({
+                    loading: false,
+                    errors: [e],
+                })
             });
         }
     };
 
-    const saveUser = (createdUser) => {
-        return usersRef.child(createdUser.user.uid).set({
+    saveUser = (createdUser) => {
+        return this.state.usersRef.child(createdUser.user.uid).set({
             name: createdUser.user.displayName,
             avatar: createdUser.user.photoURL,
         });
     }
 
-    const isFormValid = () => {
-        if (isFormEmpty()){
-            setErrors([{message: 'Fill all fields'}]);
+    isFormValid = () => {
+        if (this.isFormEmpty()){
+            this.setState({errors: [{message: 'Fill all fields'}]});
             return false;
-        } else if (!isPasswordValid()){
-            setErrors([{message: 'Password is not valid'}]);
-            return false
+        } else if (!this.isPasswordValid()){
+            this.setState({errors: [{message: 'Password is not valid'}]});
+            return false;
         } else {
             return true;
         }
     }
 
-    const isFormEmpty = () => {
-        return !username.length || !email.length || !password.length || !passwordConfirmation.length; 
+    isFormEmpty = () => {
+        return !this.state.username.length || !this.state.email.length || !this.state.password.length || !this.state.passwordConfirmation.length; 
     }
 
-    const isPasswordValid = () => {
-        if (password.length < 6 || passwordConfirmation.length < 6){
+    isPasswordValid = () => {
+        if (this.state.password.length < 6 || this.state.passwordConfirmation.length < 6){
             return false;
         } else {
-            return password === passwordConfirmation;
+            return this.state.password === this.state.passwordConfirmation;
         }
     }
 
-    const displayErrors = () => {
-        return errors.map((error, i) => (
+    displayErrors = () => {
+        return this.state.errors.map((error, i) => (
             <p key={i}>{error.message}</p>
         ));
     }
-       
-    return (
-        <Grid textAlign="center" verticalAlign="middle">
-            <Grid.Column style ={{ maxWidth: 450 }}>
-                <Header 
-                    as="h1" 
-                    icon 
-                    color="orange" 
-                    textAlign="center"
-                >
-                    <Icon 
-                        name="react" 
-                        color="orange"
-                    />
-                    Register for ReactChat
-                </Header>
-                <Form size="large" onSubmit={handleSubmit}>
-                    <Segment stacked>
-                    <Form.Input 
-                            fluid
-                            name="username"
-                            icon="user"
-                            iconPosition="left"
-                            placeholder="Username"
-                            onChange={e => setUsername(e.target.value)}
-                            value={username}
-                            type="text"
+
+    setUsername = username => {
+        this.setState({
+            username,
+        });
+    }
+    
+    setEmail = email => {
+        this.setState({
+            email,
+        });
+    }
+
+    setPassword = password => {
+        this.setState({
+            password,
+        });
+    }
+
+    setPasswordConfirmation = passwordConfirmation => {
+        this.setState({
+            passwordConfirmation,
+        });
+    }
+
+    render(){
+        return (
+            <Grid textAlign="center" verticalAlign="middle">
+                <Grid.Column style ={{ maxWidth: 450 }}>
+                    <Header 
+                        as="h1" 
+                        icon 
+                        color="orange" 
+                        textAlign="center"
+                    >
+                        <Icon 
+                            name="react" 
+                            color="orange"
                         />
+                        Register for ReactChat
+                    </Header>
+                    <Form size="large" onSubmit={this.handleSubmit}>
+                        <Segment stacked>
                         <Form.Input 
-                            fluid
-                            name="email"
-                            icon="mail"
-                            iconPosition="left"
-                            placeholder="Email Adress"
-                            onChange={e => setEmail(e.target.value)}
-                            value={email}
-                            type="email"
-                        />
-                        <Form.Input 
-                            fluid
-                            name="password"
-                            icon="lock"
-                            iconPosition="left"
-                            placeholder="Password"
-                            onChange={e => setPassword(e.target.value)}
-                            value={password}
-                            type="password"
-                        />
-                        <Form.Input 
-                            fluid
-                            name="passwordConfirmation"
-                            icon="repeat"
-                            iconPosition="left"
-                            placeholder="Password Confirmation"
-                            onChange={e => setPasswordConfirmation(e.target.value)}
-                            value={passwordConfirmation}
-                            type="password"
-                        />
-                        <Button 
-                            color="orange" 
-                            fluid 
-                            size="large"
-                            loading={loading}
-                            disabled={loading}
-                        >
-                            Submit
-                        </Button>
-                    </Segment>        
-                </Form>
-                {errors.length > 0 && (
+                                fluid
+                                name="username"
+                                icon="user"
+                                iconPosition="left"
+                                placeholder="Username"
+                                onChange={e => this.setUsername(e.target.value)}
+                                value={this.state.username}
+                                type="text"
+                            />
+                            <Form.Input 
+                                fluid
+                                name="email"
+                                icon="mail"
+                                iconPosition="left"
+                                placeholder="Email Adress"
+                                onChange={e => this.setEmail(e.target.value)}
+                                value={this.state.email}
+                                type="email"
+                            />
+                            <Form.Input 
+                                fluid
+                                name="password"
+                                icon="lock"
+                                iconPosition="left"
+                                placeholder="Password"
+                                onChange={e => this.setPassword(e.target.value)}
+                                value={this.state.password}
+                                type="password"
+                            />
+                            <Form.Input 
+                                fluid
+                                name="passwordConfirmation"
+                                icon="repeat"
+                                iconPosition="left"
+                                placeholder="Password Confirmation"
+                                onChange={e => this.setPasswordConfirmation(e.target.value)}
+                                value={this.state.passwordConfirmation}
+                                type="password"
+                            />
+                            <Button 
+                                color="orange" 
+                                fluid 
+                                size="large"
+                                loading={this.state.loading}
+                                disabled={this.state.loading}
+                            >
+                                Submit
+                            </Button>
+                        </Segment>        
+                    </Form>
+                    {this.state.errors.length > 0 && (
+                        <Message>
+                            <h3>Error</h3>
+                            {this.displayErrors()}
+                        </Message>
+                    )}
                     <Message>
-                        <h3>Error</h3>
-                        {displayErrors()}
+                        Already a user? <Link to="/login">Log in</Link>
                     </Message>
-                )}
-                <Message>
-                    Already a user? <Link to="/login">Log in</Link>
-                </Message>
-            </Grid.Column>
-        </Grid>
-    )
+                </Grid.Column>
+            </Grid>
+        )  
+    }
+    
 };
 
 export default Register;
